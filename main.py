@@ -1,0 +1,7 @@
+NAME=CMWU BOT
+TYPE=bot
+MAIN=main.py
+RAM=100
+AUTORESTART=true
+VERSION=latest
+APT=tools
