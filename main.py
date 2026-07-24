@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 from google import genai
 
-# 1. Initialize Flask Web Server
+# 1. Initialize Flask Web Server (keeps Render instance alive)
 app = Flask(__name__)
 
 @app.route('/')
@@ -24,7 +24,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 3. Setup Gemini Client
+# 3. Setup Gemini Client using official Google GenAI SDK
 gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 @bot.event
@@ -35,14 +35,15 @@ async def on_ready():
 async def ask(ctx, *, prompt: str):
     async with ctx.typing():
         try:
-            # gemini-1.5-flash works on free keys without rate limit issues
+            # Using standard alias 'gemini-flash' supported by google-genai SDK
             response = gemini_client.models.generate_content(
-                model="gemini-1.5-flash",
+                model="gemini-flash",
                 contents=prompt,
             )
             
             reply_text = response.text
             
+            # Handle Discord's 2000 character limit per message
             if len(reply_text) > 2000:
                 for i in range(0, len(reply_text), 1900):
                     await ctx.send(reply_text[i:i+1900])
