@@ -4,7 +4,7 @@ from flask import Flask
 import threading
 import discord
 from discord.ext import commands
-from google import genai
+from openai import OpenAI
 
 # 1. Initialize Flask Web Server (keeps Render instance alive)
 app = Flask(__name__)
@@ -25,8 +25,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# 3. Setup Gemini Client using official Google GenAI SDK
-gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# 3. Setup OpenAI Client
+openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 @bot.event
 async def on_ready():
@@ -36,13 +36,15 @@ async def on_ready():
 async def ask(ctx, *, prompt: str):
     async with ctx.typing():
         try:
-            # Using the active Flash model tag to prevent 404 deprecation errors
-            response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=prompt,
+            # Using gpt-4o-mini for fast, efficient responses
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
             )
             
-            reply_text = response.text
+            reply_text = response.choices[0].message.content
             
             # Handle Discord's 2000 character limit per message
             if len(reply_text) > 2000:
