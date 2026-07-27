@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const Groq = require("groq-sdk");
 
@@ -14,7 +15,7 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// Put your AI channel ID here
+// Your CMWU AI channel
 const AI_CHANNEL_ID = "1531371145050325062";
 
 client.once("ready", () => {
@@ -23,10 +24,10 @@ client.once("ready", () => {
 
 client.on("messageCreate", async (message) => {
 
-    // Ignore bots
+    // Ignore other bots
     if (message.author.bot) return;
 
-    // Only talk in the AI channel
+    // Only reply in the AI channel
     if (message.channel.id !== AI_CHANNEL_ID) return;
 
     try {
@@ -50,7 +51,7 @@ client.on("messageCreate", async (message) => {
 
     } catch (error) {
         console.error(error);
-        await message.reply("❌ Something went wrong.");
+        await message.reply("❌ Sorry, I had an error.");
     }
 });
 
