@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 const { Client, GatewayIntentBits } = require("discord.js");
 const Groq = require("groq-sdk");
 
@@ -12,11 +11,14 @@ const client = new Client({
 });
 
 const groq = new Groq({
-    apiKey: process.env.GROQ_KEY
+    apiKey: process.env.GROQ_API_KEY
 });
 
+// Put your AI channel ID here
+const AI_CHANNEL_ID = "1531371145050325062";
+
 client.once("ready", () => {
-    console.log(`${client.user.tag} is online!`);
+    console.log(`Logged in as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
@@ -24,65 +26,32 @@ client.on("messageCreate", async (message) => {
     // Ignore bots
     if (message.author.bot) return;
 
-    // Hello command
-    if (message.content === "!hello") {
-        message.reply("Hello! I am CMWU Bot 🤖");
-        return;
-    }
+    // Only talk in the AI channel
+    if (message.channel.id !== AI_CHANNEL_ID) return;
 
-    // AI command
-    if (message.content.startsWith("!ai")) {
-
-        const question = message.content
-            .slice(3)
-            .trim();
-
-        if (!question) {
-            message.reply("Ask me something after !ai 🤖");
-            return;
-        }
-
-        try {
-            await message.channel.sendTyping();
-
-            const response = await groq.chat.completions.create({
-                messages: [
-                    {
-                        role: "system",
-                        content:
-                        "You are CMWU Bot, a helpful gaming assistant. You give useful Roblox Rivals tips and friendly answers."
-                    },
-                    {
-                        role: "user",
-                        content: question
-                    }
-                ],
-                model: "llama-3.1-8b-instant"
-            });
-
-            let answer = response.choices[0].message.content;
-
-            // Discord limit is 2000 characters
-            if (answer.length > 2000) {
-                answer = answer.slice(0, 1997) + "...";
-            }
-
-            message.reply({
-                content: answer,
-                allowedMentions: {
-                    repliedUser: false
+    try {
+        const response = await groq.chat.completions.create({
+            messages: [
+                {
+                    role: "system",
+                    content: "You are CMWU, a helpful Discord AI assistant."
+                },
+                {
+                    role: "user",
+                    content: message.content
                 }
-            });
+            ],
+            model: "llama-3.1-8b-instant"
+        });
 
-        } catch (error) {
-            console.error(error);
+        const reply = response.choices[0].message.content;
 
-            message.reply(
-                "❌ Something went wrong with the AI. Check the bot logs."
-            );
-        }
+        await message.reply(reply);
+
+    } catch (error) {
+        console.error(error);
+        await message.reply("❌ Something went wrong.");
     }
 });
 
-
-client.login(process.env.TOKEN);
+client.login(process.env.DISCORD_TOKEN);
