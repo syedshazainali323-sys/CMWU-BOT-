@@ -15,20 +15,13 @@ const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// Your CMWU AI channel
-const AI_CHANNEL_ID = "1531371145050325062";
-
 client.once("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
 
-    // Ignore other bots
     if (message.author.bot) return;
-
-    // Only reply in the AI channel
-    if (message.channel.id !== AI_CHANNEL_ID) return;
 
     try {
         const response = await groq.chat.completions.create({
@@ -51,7 +44,7 @@ client.on("messageCreate", async (message) => {
 
     } catch (error) {
         console.error(error);
-        await message.reply("❌ Sorry, I had an error.");
+        await message.reply("❌ Something went wrong.");
     }
 });
 
