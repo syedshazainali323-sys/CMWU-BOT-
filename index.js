@@ -1,27 +1,14 @@
-require("dotenv").config();
-
-const { Client, GatewayIntentBits } = require("discord.js");
-const Groq = require("groq-sdk");
-
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ]
-});
-
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY
-});
-
-client.once("ready", () => {
-    console.log(`Logged in as ${client.user.tag}`);
-});
-
 client.on("messageCreate", async (message) => {
 
+    // Ignore bots
     if (message.author.bot) return;
+
+    // Only respond to ! commands
+    if (!message.content.startsWith("!")) return;
+
+    const prompt = message.content.slice(1);
+
+    if (!prompt) return;
 
     try {
         const response = await groq.chat.completions.create({
@@ -32,7 +19,7 @@ client.on("messageCreate", async (message) => {
                 },
                 {
                     role: "user",
-                    content: message.content
+                    content: prompt
                 }
             ],
             model: "llama-3.1-8b-instant"
@@ -45,7 +32,6 @@ client.on("messageCreate", async (message) => {
     } catch (error) {
         console.error(error);
         await message.reply("❌ Something went wrong.");
+
     }
 });
-
-client.login(process.env.DISCORD_TOKEN);
