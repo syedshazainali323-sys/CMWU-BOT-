@@ -16,6 +16,7 @@ const groq = new Groq({
 });
 
 const AI_CHANNEL_ID = "1531371145050325062";
+const OWNER_ID = "YOUR_USER_ID_HERE";
 
 client.once("clientReady", () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
@@ -33,48 +34,74 @@ client.on("messageCreate", async (message) => {
 
     if (!prompt) return;
 
+    const username = message.author.username;
+    const lowerMessage = prompt.toLowerCase();
+
+    // Owner recognition
+    if (
+        lowerMessage.includes("who made you") ||
+        lowerMessage.includes("who created you") ||
+        lowerMessage.includes("who owns you") ||
+        lowerMessage.includes("who coded you")
+    ) {
+        if (message.author.id === OWNER_ID) {
+            return message.reply(
+                `👑 You are my creator, ${username}. You made CMWU! 🤖`
+            );
+        } else {
+            return message.reply(
+                `I was created by Ypatin1230 🤖`
+            );
+        }
+    }
+
     try {
-        // Shows "CMWU is typing..."
         await message.channel.sendTyping();
 
         const response = await groq.chat.completions.create({
             model: "llama-3.1-8b-instant",
+
             messages: [
                 {
                     role: "system",
                     content: `You are CMWU, a friendly Discord AI assistant.
 
-Understand internet slang and casual Discord language.
+The user's Discord username will be provided before their message.
 
-Common slang:
+Rules:
+- Use the user's username when greeting them.
+- If someone says hello, hi, hey, or starts a conversation, reply with their name.
+- Example:
+User: Alex: hello
+Assistant: Hello Alex! How are you?
+
+Do not use their name in every sentence. Use it naturally.
+
+Understand Discord slang:
 - wsp = what's up
+- wyd = what are you doing
+- wya = where are you
+- fr = for real
+- ngl = not gonna lie
+- idk = I don't know
 - ik = I know
 - idc = I don't care
-- wyd = what are you doing
-- ngl = not gonna lie
-- fr = for real
+- bruh = casual reaction
 - lol = laughing
 - lmao = laughing a lot
-- bruh = casual reaction
+- gg = good game
+- afk = away from keyboard
 
-Understand slang from context and reply naturally. Do not complain about slang.
+Be friendly, helpful, and talk naturally.
 
-Personality:
-- Be friendly and helpful.
-- Talk naturally like a Discord assistant.
-- Keep replies clear and not unnecessarily long.
-
-Creator:
-If someone asks who made you, who created you, who developed you, who coded you, or who owns you, answer:
-"I was created by Ypatin1230."
-
-Do not say someone else created you.`
+The creator of this bot is Ypatin1230.`
                 },
                 {
                     role: "user",
-                    content: prompt
+                    content: `${username}: ${prompt}`
                 }
             ],
+
             max_tokens: 500,
             temperature: 0.7
         });
@@ -87,7 +114,7 @@ Do not say someone else created you.`
 
     } catch (error) {
         console.error("AI Error:", error);
-        await message.reply("❌ Sorry, I had an error.");
+        await message.reply("❌ Sorry, I got an error.");
     }
 });
 
