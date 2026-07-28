@@ -18,16 +18,17 @@ const groq = new Groq({
 const AI_CHANNEL_ID = "1531371145050325062";
 const OWNER_ID = "YOUR_USER_ID_HERE";
 
+// User conversation memory
+const userMemory = new Map();
+
 client.once("clientReady", () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
 
-    // Ignore bots
     if (message.author.bot) return;
 
-    // Only respond in AI channel
     if (message.channel.id !== AI_CHANNEL_ID) return;
 
     const prompt = message.content.trim();
@@ -35,16 +36,17 @@ client.on("messageCreate", async (message) => {
     if (!prompt) return;
 
     const username = message.author.username;
+    const userId = message.author.id;
     const lowerMessage = prompt.toLowerCase();
 
-    // Owner recognition
+    // Creator recognition
     if (
         lowerMessage.includes("who made you") ||
         lowerMessage.includes("who created you") ||
         lowerMessage.includes("who owns you") ||
         lowerMessage.includes("who coded you")
     ) {
-        if (message.author.id === OWNER_ID) {
+        if (userId === OWNER_ID) {
             return message.reply(
                 `👑 You are my creator, ${username}. You made CMWU! 🤖`
             );
@@ -56,9 +58,29 @@ client.on("messageCreate", async (message) => {
     }
 
     try {
+
         await message.channel.sendTyping();
 
+        // Create memory for new users
+        if (!userMemory.has(userId)) {
+            userMemory.set(userId, []);
+        }
+
+        const memory = userMemory.get(userId);
+
+        // Add user's message
+        memory.push({
+            role: "user",
+            content: `${username}: ${prompt}`
+        });
+
+        // Keep only last 10 messages to prevent it getting too big
+        if (memory.length > 10) {
+            memory.shift();
+        }
+
         const response = await groq.chat.completions.create({
+
             model: "llama-3.1-8b-instant",
 
             messages: [
@@ -66,56 +88,59 @@ client.on("messageCreate", async (message) => {
                     role: "system",
                     content: `You are CMWU, a friendly Discord AI assistant.
 
-The user's Discord username will be provided before their message.
-
 Rules:
-- Use the user's username when greeting them.
-- If someone says hello, hi, hey, or starts a conversation, reply with their name.
-- Example:
-User: Alex: hello
-Assistant: Hello Alex! How are you?
+- Remember previous messages from the same user.
+- Use their username naturally when greeting them.
+- Understand Discord slang.
 
-Do not use their name in every sentence. Use it naturally.
+Slang:
+wsp = what's up
+wyd = what are you doing
+wya = where are you
+fr = for real
+ngl = not gonna lie
+idk = I don't know
+ik = I know
+idc = I don't care
+bruh = casual reaction
+lol = laughing
+lmao = laughing a lot
+gg = good game
+afk = away from keyboard
 
-Understand Discord slang:
-- wsp = what's up
-- wyd = what are you doing
-- wya = where are you
-- fr = for real
-- ngl = not gonna lie
-- idk = I don't know
-- ik = I know
-- idc = I don't care
-- bruh = casual reaction
-- lol = laughing
-- lmao = laughing a lot
-- gg = good game
-- afk = away from keyboard
+Creator:
+You were created by Ypatin1230.
 
-Be friendly, helpful, and talk naturally.
-
-The creator of this bot is Ypatin1230.`
+Be friendly and helpful.`
                 },
-                {
-                    role: "user",
-                    content: `${username}: ${prompt}`
-                }
+
+                ...memory
             ],
 
             max_tokens: 500,
             temperature: 0.7
         });
 
+
         const reply = response.choices[0].message.content;
 
-        if (reply) {
-            await message.reply(reply);
-        }
+        // Save bot reply to memory
+        memory.push({
+            role: "assistant",
+            content: reply
+        });
+
+        await message.reply(reply);
+
 
     } catch (error) {
+
         console.error("AI Error:", error);
         await message.reply("❌ Sorry, I got an error.");
+
     }
+
 });
+
 
 client.login(process.env.DISCORD_TOKEN);
