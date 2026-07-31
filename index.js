@@ -1,8 +1,24 @@
 require("dotenv").config();
 
+const express = require("express");
 const { Client, GatewayIntentBits } = require("discord.js");
 const Groq = require("groq-sdk");
 
+// ================= WEB SERVER FOR RENDER =================
+
+const app = express();
+
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+    res.send("CMWU AI Bot is online!");
+});
+
+app.listen(PORT, () => {
+    console.log(`🌐 Web server running on port ${PORT}`);
+});
+
+// ================= DISCORD CLIENT =================
 
 const client = new Client({
     intents: [
@@ -12,24 +28,25 @@ const client = new Client({
     ]
 });
 
+// ================= GROQ =================
 
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-
 const AI_CHANNEL_ID = "1531371145050325062";
 const OWNER_ID = "YOUR_USER_ID_HERE";
-
 
 // Temporary memory
 const userMemory = new Map();
 
+// ================= READY =================
 
 client.once("clientReady", () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
+// ================= AI CHAT =================
 
 client.on("messageCreate", async (message) => {
 
@@ -37,16 +54,13 @@ client.on("messageCreate", async (message) => {
 
     if (message.channel.id !== AI_CHANNEL_ID) return;
 
-
     const prompt = message.content.trim();
 
     if (!prompt) return;
 
-
     const username = message.author.username;
     const userId = message.author.id;
     const lowerMessage = prompt.toLowerCase();
-
 
     // Owner recognition
     if (
@@ -67,31 +81,25 @@ client.on("messageCreate", async (message) => {
         }
     }
 
-
     try {
 
         await message.channel.sendTyping();
-
 
         if (!userMemory.has(userId)) {
             userMemory.set(userId, []);
         }
 
-
         const memory = userMemory.get(userId);
-
 
         memory.push({
             role: "user",
             content: `${username}: ${prompt}`
         });
 
-
         // Keep last 10 messages
         if (memory.length > 10) {
             memory.shift();
         }
-
 
         const response = await groq.chat.completions.create({
 
@@ -140,18 +148,14 @@ Be friendly, helpful, and natural.`
             temperature: 0.7
         });
 
-
         const reply = response.choices[0].message.content;
-
 
         memory.push({
             role: "assistant",
             content: reply
         });
 
-
         await message.reply(reply);
-
 
     } catch (error) {
 
@@ -163,5 +167,6 @@ Be friendly, helpful, and natural.`
 
 });
 
+// ================= LOGIN =================
 
 client.login(process.env.DISCORD_TOKEN);
