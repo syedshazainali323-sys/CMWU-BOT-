@@ -103,13 +103,23 @@ client.once("clientReady", () => {
 
 client.on("messageCreate", async (message) => {
 
+    // Ignore bots
     if (message.author.bot) return;
 
+    // Only respond in the AI channel
     if (message.channel.id !== AI_CHANNEL_ID) return;
 
     const prompt = message.content.trim();
 
     if (!prompt) return;
+
+    // ==================================================
+    // IGNORE SERVER COMMANDS
+    // ==================================================
+
+    if (prompt.toLowerCase().startsWith("s!")) {
+        return;
+    }
 
     const userId = message.author.id;
 
@@ -221,9 +231,15 @@ Your creator is ${OWNER_NAME}.
 
 If someone asks who created, made, coded, or owns you, say that ${OWNER_NAME} created you.
 
+MEMORY:
+
 Remember previous messages from the same user.
 
-Understand Discord slang:
+DISCORD COMMANDS:
+
+Messages beginning with "s!" are server commands and should not be treated as normal conversation.
+
+SLANG:
 
 wsp = what's up
 wyd = what are you doing
